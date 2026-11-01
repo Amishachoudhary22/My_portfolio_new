@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Amisha Choudhary — Outbound</title>
+<meta name="description" content="Amisha Choudhary — DevOps & Cloud/GenAI Engineer. A continuous flight through everything I have built.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Space+Grotesk:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#03050e;
+  --ink:#eef2ff;
+  --ink-dim:#8790b6;
+  --cyan:#7ee7ff;
+  --cyan-dim:rgba(126,231,255,.3);
+  --hair:rgba(126,231,255,.18);
+  --mono:'Share Tech Mono',monospace;
+  --body:'Space Grotesk',sans-serif;
+  --display:'Michroma',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:auto;scroll-snap-type:y mandatory}
+body{background:var(--void);color:var(--ink);font-family:var(--body);
+  background-image:
+    radial-gradient(ellipse 60% 50% at 82% 10%, rgba(120,90,230,.14), transparent 60%),
+    radial-gradient(ellipse 55% 60% at 8% 90%, rgba(30,110,180,.13), transparent 60%),
+    linear-gradient(180deg,#04061a,#03050e 60%,#05081a);
+  background-attachment:fixed;overflow-x:hidden;}
+
+/* scroll length is built from one full-height snap panel per sector (added by JS).
+   scroll-snap-stop:always makes every destination a hard stop — no skipping. */
+#track{position:relative;width:100%;z-index:0}
+.panel{height:100vh;scroll-snap-align:start;scroll-snap-stop:always}
+
+canvas#space{position:fixed;inset:0;z-index:1;display:block}
+/* the craft renders on its own layer, above the colour tint, so it keeps its true colours */
+canvas#ufo{position:fixed;inset:0;z-index:4;pointer-events:none;display:block}
+
+/* cinematic vignette */
+#vignette{position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(ellipse 78% 78% at 50% 46%, transparent 55%, rgba(3,5,14,.62) 100%)}
+/* per-region colour wash — set by JS, kept soft so text stays readable */
+#tint{position:fixed;inset:0;z-index:3;pointer-events:none;mix-blend-mode:screen;
+  background:radial-gradient(125% 108% at 50% 44%, var(--tint,transparent) 0%, transparent 70%)}
+#flash{position:fixed;inset:0;z-index:5;pointer-events:none;opacity:0;transition:opacity .55s ease;mix-blend-mode:screen}
+
+/* ---------- boot ---------- */
+#loader{position:fixed;inset:0;z-index:80;background:var(--void);display:flex;align-items:center;
+  justify-content:center;transition:opacity .8s ease;font-family:var(--mono)}
+#loader.done{opacity:0;pointer-events:none}
+.boot{width:min(440px,86vw)}
+.b-l{color:var(--ink-dim);font-size:12.5px;letter-spacing:.06em;margin:6px 0;opacity:0;animation:bi .3s forwards}
+.b-l b{color:var(--cyan);font-weight:normal}.b-l.ok::after{content:' ✓';color:#7dffb0}
+.b-bar{height:2px;background:rgba(126,231,255,.12);margin-top:16px;overflow:hidden}
+.b-bar i{display:block;height:100%;width:0;background:var(--cyan);animation:bl 1.6s .2s ease forwards}
+@keyframes bi{to{opacity:1}}@keyframes bl{to{width:100%}}
+
+/* ---------- reticle ---------- */
+.tick{position:fixed;width:15px;height:15px;z-index:20;pointer-events:none;opacity:.4}
+.tick::before,.tick::after{content:'';position:absolute;background:var(--cyan)}
+.tick::before{width:100%;height:1px}.tick::after{width:1px;height:100%}
+.tick.tl{top:12px;left:12px}.tick.tr{top:12px;right:12px;transform:scaleX(-1)}
+.tick.bl{bottom:12px;left:12px;transform:scaleY(-1)}.tick.br{bottom:12px;right:12px;transform:scale(-1)}
+
+/* ---------- HUD ---------- */
+/* ---------- top nav ---------- */
+.hud{position:fixed;z-index:20;font-family:var(--mono);pointer-events:none}
+.hud *{pointer-events:auto}
+#hud-top{top:0;left:0;right:0;display:flex;align-items:center;gap:14px;padding:12px 20px;
+  background:linear-gradient(180deg, rgba(3,5,14,.82) 0%, rgba(3,5,14,.4) 60%, transparent 100%)}
+.brand{background:none;border:none;cursor:pointer;text-align:left;padding:0;flex-shrink:0;line-height:1}
+.brand .n{font-family:var(--display);font-size:13px;letter-spacing:.18em;color:var(--ink);display:block}
+.brand .r{font-size:9px;letter-spacing:.22em;color:var(--cyan);margin-top:5px;display:block}
+.brand:hover .n{color:var(--cyan)}
+
+.topnav{display:flex;gap:1px;flex:1;justify-content:center;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.topnav::-webkit-scrollbar{display:none}
+.navlink{font-family:var(--mono);font-size:10px;letter-spacing:.13em;color:var(--ink-dim);background:none;border:none;
+  cursor:pointer;padding:7px 10px;white-space:nowrap;transition:color .2s;position:relative}
+.navlink:hover{color:var(--ink)}
+.navlink.on{color:var(--cyan)}
+.navlink.on::after{content:'';position:absolute;left:10px;right:10px;bottom:2px;height:1px;background:var(--cyan);box-shadow:0 0 7px rgba(126,231,255,.7)}
+
+.toputil{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.util-res{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--cyan);text-decoration:none;
+  border:1px solid var(--cyan-dim);padding:7px 12px;border-radius:20px;background:rgba(126,231,255,.05);transition:all .2s;white-space:nowrap}
+.util-res:hover{background:rgba(126,231,255,.14);box-shadow:0 0 16px rgba(126,231,255,.3)}
+.util-ic{width:30px;height:30px;border-radius:50%;border:1px solid var(--hair);display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:10px;letter-spacing:.02em;color:#cfe9f4;text-decoration:none;transition:all .2s}
+.util-ic svg{width:15px;height:15px;fill:currentColor;display:block}
+.util-ic:hover{color:var(--cyan);border-color:var(--cyan-dim);box-shadow:0 0 14px rgba(126,231,255,.28)}
+
+/* progress rail */
+#rail{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:20;
+  display:flex;flex-direction:column;align-items:center;gap:0;pointer-events:none}
+#rail *{pointer-events:auto}
+.rail-line{position:relative;width:2px;height:min(46vh,360px);background:rgba(126,231,255,.14);border-radius:2px;overflow:hidden}
+.rail-fill{position:absolute;top:0;left:0;width:100%;height:0;background:linear-gradient(var(--cyan),rgba(126,231,255,.4));box-shadow:0 0 10px rgba(126,231,255,.5)}
+.rail-marks{position:absolute;inset:0}
+.rm{position:absolute;left:50%;transform:translate(-50%,-50%);width:9px;height:9px;border-radius:50%;
+  border:1px solid var(--cyan-dim);background:var(--void);cursor:pointer;transition:transform .2s,background .2s,border-color .2s}
+.rm:hover{transform:translate(-50%,-50%) scale(1.4);border-color:var(--cyan)}
+.rm.active{background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 10px rgba(126,231,255,.7)}
+.rm .rl{position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:8.5px;letter-spacing:.14em;
+  color:var(--ink-dim);white-space:nowrap;opacity:0;transition:opacity .2s;text-align:right}
+.rm:hover .rl,.rm.active .rl{opacity:1;color:var(--cyan)}
+
+/* ---------- flight sections ---------- */
+#sections{position:fixed;inset:0;z-index:10;pointer-events:none}
+.sect{position:absolute;inset:0;display:flex;padding:96px 26px 120px;opacity:0;will-change:opacity,transform}
+.sect.al-left{align-items:center;justify-content:flex-start}
+.sect.al-right{align-items:center;justify-content:flex-end}
+.sect.al-center{align-items:center;justify-content:center}
+.wrap{max-width:500px;pointer-events:none;padding:26px 30px;border-radius:18px;position:relative;isolation:isolate}
+.sect.al-center .wrap{max-width:640px;text-align:center}
+
+/* ---- transmission reveal ---- */
+/* 1. the panel scrim lives on ::before so it can OPEN like a scroll, independent of the text */
+.wrap::before{content:'';position:absolute;inset:0;border-radius:18px;z-index:-1;
+  background:radial-gradient(125% 120% at 28% 30%, rgba(4,7,20,.74), rgba(4,7,20,.36) 66%, transparent 100%);
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  transform:scaleY(.03);opacity:0;transform-origin:center;
+  transition:transform .5s cubic-bezier(.2,.85,.2,1),opacity .32s ease}
+.sect.al-center .wrap::before{background:radial-gradient(120% 120% at 50% 42%, rgba(4,7,20,.7), rgba(4,7,20,.3) 66%, transparent 100%)}
+.sect.al-right .wrap::before{background:radial-gradient(125% 120% at 72% 30%, rgba(4,7,20,.74), rgba(4,7,20,.36) 66%, transparent 100%)}
+.sect.show .wrap::before{transform:scaleY(1);opacity:1}
+
+/* 2. a bright channel line sweeps open horizontally as the panel finishes opening */
+.wrap::after{content:'';position:absolute;left:30px;right:30px;top:14px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--cyan) 20%,var(--cyan) 80%,transparent);
+  box-shadow:0 0 10px rgba(126,231,255,.6);
+  transform:scaleX(0);opacity:0;transform-origin:center;
+  transition:transform .55s cubic-bezier(.2,.8,.2,1) .18s,opacity .4s ease .18s}
+.sect.show .wrap::after{transform:scaleX(1);opacity:.85}
+
+/* 3. then each line materialises, staggered by its own --d */
+.wrap > *{opacity:0;transform:translateY(12px);
+  transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1)}
+.sect.show .wrap > *{opacity:1;transform:none;transition-delay:var(--d,0s)}
+.pts li{opacity:0;transform:translateX(-10px);transition:opacity .5s ease,transform .5s ease}
+.sect.show .pts li{opacity:1;transform:none;transition-delay:var(--d,0s)}
+.grid2 .gcol{opacity:0;transform:translateY(10px);transition:opacity .5s ease,transform .5s ease}
+.sect.show .grid2 .gcol{opacity:1;transform:none;transition-delay:var(--d,0s)}
+.chips span{opacity:0;transform:translateY(8px) scale(.96);transition:opacity .4s ease,transform .4s ease}
+.sect.show .chips span{opacity:1;transform:none;transition-delay:var(--d,0s)}
+
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.36em;color:var(--cyan);margin-bottom:16px;
+  filter:drop-shadow(0 0 8px rgba(126,231,255,.5))}
+.big{font-family:var(--display);letter-spacing:.06em;line-height:1.2;text-shadow:0 0 44px rgba(126,231,255,.4)}
+.al-center .big{font-size:clamp(30px,6.4vw,64px);letter-spacing:.12em}
+.big{font-size:clamp(22px,3.8vw,36px)}
+.role{font-family:var(--mono);font-size:clamp(10px,1.4vw,13px);letter-spacing:.28em;color:var(--cyan);margin-top:16px}
+.sub{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--ink-dim);margin-top:14px;line-height:1.7}
+.note{font-size:14.5px;font-weight:300;color:#d3d9f2;margin-top:18px;line-height:1.7;max-width:480px}
+.al-center .note{margin-left:auto;margin-right:auto}
+
+.pts{list-style:none;margin-top:20px}
+.pts li{font-size:13px;font-weight:400;line-height:1.6;color:#d3dcf5;padding:7px 0 7px 18px;position:relative}
+.pts li::before{content:'▸';position:absolute;left:0;top:8px;color:var(--cyan);font-size:10px}
+.pts li b{color:var(--ink);font-weight:500}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px 22px;margin-top:18px;text-align:left}
+.gcol .gh{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;color:var(--cyan);margin-bottom:7px;opacity:.9}
+.gcol ul{list-style:none}
+.gcol li{font-size:12px;font-weight:300;color:#c4cbe8;line-height:1.55;padding:3px 0 3px 12px;position:relative}
+.gcol li::before{content:'·';position:absolute;left:2px;color:var(--cyan-dim)}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px;justify-content:center}
+.chips span{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:#bfe9f6;border:1px solid var(--hair);
+  padding:5px 9px;border-radius:2px;background:rgba(126,231,255,.05)}
+
+/* ---------- categorized skills ---------- */
+.skcats{margin-top:16px;display:flex;flex-direction:column;gap:9px}
+.skcat{display:flex;align-items:flex-start;gap:12px;text-align:left}
+.skcat-h{flex:0 0 92px;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--cyan);text-align:right;padding-top:6px;line-height:1.3}
+.skchips{display:flex;flex-wrap:wrap;gap:5px;flex:1;justify-content:flex-start}
+.skchips span{font-family:var(--mono);font-size:9.5px;letter-spacing:.03em;color:#c6ecf5;border:1px solid var(--hair);
+  padding:4px 8px;border-radius:3px;background:rgba(126,231,255,.05)}
+.dock-note{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--ink-dim);margin-top:14px}
+
+/* ---------- project cards ---------- */
+.projs{margin-top:18px;display:flex;flex-direction:column;gap:11px}
+.proj{border:1px solid var(--hair);border-radius:10px;padding:12px 14px;background:rgba(126,231,255,.035);transition:border-color .2s,background .2s}
+.proj:hover{border-color:var(--cyan-dim);background:rgba(126,231,255,.07)}
+.proj-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.proj-n{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;color:var(--ink)}
+.proj-l{display:flex;gap:10px;flex-shrink:0}
+.proj-l a{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--cyan);text-decoration:none;opacity:.85;transition:opacity .2s,text-shadow .2s}
+.proj-l a:hover{opacity:1;text-shadow:0 0 8px rgba(126,231,255,.6)}
+.proj-b{font-size:12.5px;font-weight:300;line-height:1.5;color:#cdd6f0;margin-top:6px}
+.proj-b b{color:var(--ink);font-weight:500}
+.proj-t{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--ink-dim);margin-top:7px}
+
+/* ---------- start over ---------- */
+.restart{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:#cfe9f4;background:rgba(126,231,255,.05);
+  border:1px solid var(--hair);padding:11px 18px;border-radius:24px;cursor:pointer;margin-top:22px;transition:all .2s}
+.restart:hover{color:var(--cyan);border-color:var(--cyan-dim);box-shadow:0 0 22px rgba(126,231,255,.28)}
+
+.links{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:22px;pointer-events:auto}
+.links a{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:#cfe9f4;text-decoration:none;
+  border:1px solid var(--hair);padding:11px 16px;border-radius:3px;background:rgba(126,231,255,.05);
+  opacity:0;transform:translateY(10px);
+  transition:opacity .5s ease,transform .5s ease,color .2s,border-color .2s,box-shadow .2s}
+.sect.show .links a{opacity:1;transform:none;transition-delay:var(--d,0s)}
+.links a:hover,.links a:focus-visible{color:var(--cyan);border-color:var(--cyan-dim);box-shadow:0 0 22px rgba(126,231,255,.28)}
+.links a::before{content:'▸ ';color:var(--cyan-dim)}
+
+/* ---------- contact form ---------- */
+.cform{display:flex;flex-direction:column;gap:9px;max-width:420px;margin:18px auto 4px;text-align:left}
+.cf{font-family:var(--mono);font-size:12px;letter-spacing:.05em;color:var(--ink);width:100%;
+  background:rgba(126,231,255,.05);border:1px solid var(--hair);border-radius:7px;padding:11px 13px;outline:none;
+  transition:border-color .2s,box-shadow .2s;resize:vertical}
+.cf::placeholder{color:var(--ink-dim);letter-spacing:.1em}
+.cf:focus{border-color:var(--cyan-dim);box-shadow:0 0 18px rgba(126,231,255,.2)}
+textarea.cf{min-height:64px;line-height:1.5}
+.cf-send{font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--void);font-weight:600;
+  background:var(--cyan);border:none;border-radius:7px;padding:12px 16px;cursor:pointer;margin-top:2px;
+  transition:filter .2s,box-shadow .2s;box-shadow:0 0 20px rgba(126,231,255,.35)}
+.cf-send:hover{filter:brightness(1.08);box-shadow:0 0 28px rgba(126,231,255,.5)}
+.cf-send:disabled{opacity:.55;cursor:default;box-shadow:none;filter:none}
+.cf-status{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;min-height:14px;text-align:center;color:var(--ink-dim)}
+.cf-status.ok{color:#7dffb0}.cf-status.err{color:#ff8f8f}
+
+/* ---------- scroll hint ---------- */
+#hint{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:20;font-family:var(--mono);
+  font-size:10px;letter-spacing:.22em;color:var(--ink-dim);text-align:center;transition:opacity .5s;pointer-events:none}
+#hint .arw{display:block;margin:8px auto 0;width:16px;height:16px;border-right:1px solid var(--cyan);
+  border-bottom:1px solid var(--cyan);transform:rotate(45deg);animation:bounce 1.8s infinite}
+@keyframes bounce{0%,100%{transform:rotate(45deg) translate(0,0);opacity:.5}50%{transform:rotate(45deg) translate(3px,3px);opacity:1}}
+
+/* ---------- sound ---------- */
+#sound{position:fixed;left:16px;bottom:22px;z-index:22;font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+  color:var(--ink-dim);background:rgba(8,13,30,.55);border:1px solid var(--hair);padding:8px 12px;border-radius:20px;
+  cursor:pointer;display:flex;align-items:center;gap:8px;backdrop-filter:blur(6px);transition:color .2s,border-color .2s}
+#sound:hover,#sound.on{color:var(--cyan);border-color:var(--cyan-dim)}
+#sound .ic{width:8px;height:8px;border-radius:50%;background:currentColor}
+#sound.on .ic{animation:sonar 1.6s infinite}
+#sound.pulse{animation:hp 2.2s infinite}
+@keyframes sonar{0%{box-shadow:0 0 0 0 rgba(126,231,255,.5)}100%{box-shadow:0 0 0 11px rgba(126,231,255,0)}}
+@keyframes hp{0%,100%{border-color:var(--hair)}50%{border-color:var(--cyan);box-shadow:0 0 14px rgba(126,231,255,.3)}}
+
+:focus-visible{outline:1px solid var(--cyan);outline-offset:3px}
+
+/* opening panel — narrower, shorter and dropped lower so the projector craft has room above it */
+.sect-title .wrap{max-width:560px;padding:22px 26px;transform:translateY(8vh)}
+.sect-title.al-center .big{font-size:clamp(28px,5.2vw,52px)}
+.sect-title .eyebrow{margin-bottom:12px}
+.sect-title .note{margin-top:14px}
+
+/* ---------- responsive ---------- */
+@media (max-width:760px){
+  #hud-top{gap:8px;padding:10px 12px}
+  .brand .n{font-size:11px;letter-spacing:.12em}
+  .brand .r{display:none}
+  .topnav{justify-content:flex-start}
+  .navlink{font-size:9.5px;padding:6px 8px}
+  .util-res{padding:6px 9px;font-size:9px}
+  .util-ic{width:26px;height:26px;font-size:9px}
+  .sect{padding:84px 18px 150px;align-items:flex-end!important;justify-content:center!important}
+  .wrap,.sect.al-center .wrap{max-width:none;text-align:center}
+  .sect-title .wrap{transform:none}
+  .grid2{grid-template-columns:1fr;gap:12px}
+  .skcat{flex-direction:column;gap:3px}
+  .skcat-h{flex:none;text-align:center;padding-top:0}
+  .skchips{justify-content:center}
+  .pts{display:inline-block;text-align:left}
+  #rail{right:10px}
+  .rail-line{height:min(38vh,300px)}
+  .rm .rl{display:none}
+  #hint{bottom:66px}
+  #sound{bottom:104px;font-size:9px;padding:7px 10px}
+}
+@media (prefers-reduced-motion:reduce){
+  #hint .arw{animation:none}
+  .wrap > *,.pts li,.grid2 .gcol,.chips span,.links a{opacity:1;transform:none;transition:none}
+  .wrap::before{transform:scaleY(1);opacity:1;transition:none}
+  .wrap::after{transform:scaleX(1);opacity:.85;transition:none}
+}
+</style>
+</head>
+<body>
+
+<div id="track"></div>
+
+<div id="loader" role="status" aria-label="Loading">
+  <div class="boot">
+    <div class="b-l" style="animation-delay:.05s"><b>FLIGHT COMPUTER</b> initializing</div>
+    <div class="b-l ok" style="animation-delay:.35s"><b>NAV</b> flight path plotted · 8 sectors</div>
+    <div class="b-l ok" style="animation-delay:.7s"><b>PROP</b> drives online · throttle = scroll</div>
+    <div class="b-l" style="animation-delay:1.05s"><b>PILOT</b> A. CHOUDHARY · cleared for departure</div>
+    <div class="b-bar"><i></i></div>
+  </div>
+</div>
+
+<canvas id="space"></canvas>
+<div id="vignette"></div>
+<div id="tint"></div>
+<canvas id="ufo"></canvas>
+<div id="flash"></div>
+
+<div class="tick tl"></div><div class="tick tr"></div><div class="tick bl"></div><div class="tick br"></div>
+
+<header class="hud" id="hud-top">
+  <button class="brand" id="brand" aria-label="Back to launch">
+    <span class="n">AMISHA CHOUDHARY</span>
+    <span class="r">DEVOPS &amp; CLOUD ENGINEER</span>
+  </button>
+  <nav class="topnav" id="topnav" aria-label="Sectors"><!-- built by JS --></nav>
+  <div class="toputil">
+    <a class="util-res" id="util-res" href="AmishaChoudhary2025_Resume_.pdf" download>RESUME ↓</a><!-- TODO: point to your PDF -->
+    <a class="util-ic" id="util-li" href="https://www.linkedin.com/in/amisha-choudhary-8957a7221/" target="_blank" rel="noopener" aria-label="LinkedIn" title="LinkedIn"><!-- TODO: swap SVG for official logo if you like -->
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg></a>
+    <a class="util-ic" id="util-gh" href="https://github.com/Amishachoudhary22" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub"><!-- TODO: swap SVG for official logo if you like -->
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.3-1.8-1.3-1.8-1.1-.7 0-.7 0-.7 1.2 0 1.9 1.2 1.9 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.3 1.2-3.2 0-.3-.5-1.5.2-3 0 0 1-.4 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.7 1.6.2 2.8.1 3 .8.9 1.2 2 1.2 3.2 0 4.7-2.8 5.7-5.5 6 .4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3z"/></svg></a>
+  </div>
+</header>
+
+<nav id="rail" aria-label="Flight sectors">
+  <div class="rail-line"><div class="rail-fill" id="rail-fill"></div><div class="rail-marks" id="rail-marks"></div></div>
+</nav>
+
+<div id="sections"><!-- built by JS --></div>
+
+<div id="hint">SCROLL TO FLY<span class="arw"></span></div>
+
+<button id="sound" class="pulse" aria-label="Toggle sound"><span class="ic"></span><span class="lbl">SOUND OFF</span></button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+/* ==========================================================================
+   AMISHA CHOUDHARY — "OUTBOUND"
+   A single continuous flight through eight distinct regions of space.
+   Scrolling drives a camera along a spline; each landmark is a real 3D set
+   piece that emerges from the fog. No slides — one journey.
+   --------------------------------------------------------------------------
+   EDIT: all copy is in ACTS[]. Real links → search "TODO".
+   ========================================================================== */
+
+const R = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const smooth=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
+const V=(x,y,z)=>new THREE.Vector3(x,y,z);
+
+/* ===================== EmailJS (contact form) =====================
+   To make the contact form actually send mail, create a free account at
+   emailjs.com, add an email service + a template, then paste your three
+   IDs below. Template should use variables: {{from_name}} {{from_email}}
+   {{reply_to}} {{message}}. Until then the form shows "EMAIL NOT SET UP YET". */
+const EMAILJS_PUBLIC_KEY='nHgN9wghDsNIJHJSj';   
+const EMAILJS_SERVICE_ID='service_h3ddzmk';   
+const EMAILJS_TEMPLATE_ID='template_oqw02bd'; 
+
+/* ----------------------------- AUDIO (synth) ----------------------------- */
+const Audio=(()=>{
+  let ctx,master,amb=[],on=false,ready=false;
+  function ensure(){ if(ready)return true; const AC=window.AudioContext||window.webkitAudioContext; if(!AC)return false;
+    ctx=new AC(); master=ctx.createGain(); master.gain.value=0.0001; master.connect(ctx.destination); ready=true; return true; }
+  function ambient(){
+    const f=ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=480; f.Q.value=4;
+    const g=ctx.createGain(); g.gain.value=0.5; f.connect(g); g.connect(master);
+    [55,82.4,110,146.8].forEach((hz,i)=>{ const o=ctx.createOscillator(); o.type=i%2?'sine':'triangle'; o.frequency.value=hz;
+      o.detune.value=(i-1.5)*7; const og=ctx.createGain(); og.gain.value=0.22/(i+1); o.connect(og); og.connect(f); o.start(); amb.push(o,og); });
+    const lfo=ctx.createOscillator(); lfo.frequency.value=0.05; const lg=ctx.createGain(); lg.gain.value=150;
+    lfo.connect(lg); lg.connect(f.frequency); lfo.start(); amb.push(lfo,lg,f,g);
+  }
+  function setEnabled(v){ if(v){ if(!ensure())return false; if(ctx.state==='suspended')ctx.resume(); if(!amb.length)ambient();
+      master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(Math.max(master.gain.value,0.0001),ctx.currentTime);
+      master.gain.linearRampToValueAtTime(0.8,ctx.currentTime+0.6); on=true;
+    } else { if(ready){ master.gain.cancelScheduledValues(ctx.currentTime); master.gain.linearRampToValueAtTime(0.0001,ctx.currentTime+0.4);} on=false; } return on; }
+  function blip(fr=1000,d=0.07,t='sine',v=0.1){ if(!on||!ready)return; const now=ctx.currentTime,o=ctx.createOscillator(),g=ctx.createGain();
+    o.type=t;o.frequency.value=fr; g.gain.setValueAtTime(0.0001,now); g.gain.linearRampToValueAtTime(v,now+.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,now+d); o.connect(g);g.connect(master);o.start(now);o.stop(now+d+.02); }
+  function warp(d=1.7){ if(!on||!ready)return; const t=ctx.currentTime;
+    const buf=ctx.createBuffer(1,Math.floor(ctx.sampleRate*d),ctx.sampleRate),dd=buf.getChannelData(0);
+    for(let i=0;i<dd.length;i++)dd[i]=Math.random()*2-1; const s=ctx.createBufferSource();s.buffer=buf;
+    const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.Q.value=4;
+    bp.frequency.setValueAtTime(260,t);bp.frequency.exponentialRampToValueAtTime(4600,t+d*.5);bp.frequency.exponentialRampToValueAtTime(160,t+d);
+    const g=ctx.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(0.2,t+.15);g.gain.linearRampToValueAtTime(0.0001,t+d);
+    s.connect(bp);bp.connect(g);g.connect(master);s.start(t);s.stop(t+d);
+    const o=ctx.createOscillator(),og=ctx.createGain();o.type='sawtooth';
+    o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(720,t+d*.5);o.frequency.exponentialRampToValueAtTime(80,t+d);
+    og.gain.setValueAtTime(0.0001,t);og.gain.linearRampToValueAtTime(0.09,t+.2);og.gain.linearRampToValueAtTime(0.0001,t+d);
+    o.connect(og);og.connect(master);o.start(t);o.stop(t+d); }
+  function arrive(){ if(!on||!ready)return; const t=ctx.currentTime,o=ctx.createOscillator(),g=ctx.createGain();
+    o.type='sine';o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(58,t+.4);
+    g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(0.26,t+.02);g.gain.exponentialRampToValueAtTime(0.0001,t+.5);
+    o.connect(g);g.connect(master);o.start(t);o.stop(t+.55); blip(1245,.28,'sine',.1); }
+  return {setEnabled,blip,warp,arrive};
+})();
+
+/* ------------------------------- CONTENT --------------------------------- */
+const ACTS=[
+    {
+    id:'title', sector:'LAUNCH', nav:'HOME', place:'center', color:0x7ee7ff,
+    eyebrow:'OUTBOUND FLIGHT · OPERATOR A. CHOUDHARY',
+    big:'AMISHA<br>CHOUDHARY',
+    role:'CLOUD &amp; DEVOPS ENGINEER · AI AUTOMATION · FULL STACK' ,
+    note:'Building cloud infrastructure, automating engineering workflows and exploring what intelligent systems can do. Scroll to explore my journey.'
+  },
+  {
+    id:'devops', sector:'LIVE SYSTEMS', nav:'CURRENT ROLE',
+    place:'left', color:0x4f8bff,
+    eyebrow:'SECTOR 01 · CURRENT COMMAND',
+    big:'Cloud &amp; DevOps Engineer',
+    sub:'Tata Consultancy Services · Feb 2026 → Present · Azure · Platform Engineering',
+    pts:[
+      'Engineered and maintained <b>Azure cloud infrastructure</b> across multiple environments, working with <b>AKS, ACR, Terraform, networking and identity management</b>.',
+      'Built and improved <b>Jenkins CI/CD pipelines</b> using <b>Docker and Helm</b> to automate microservice builds, container publishing and Kubernetes deployments.',
+      'Worked on distributed platform infrastructure involving <b>PostgreSQL, Kafka, Redis and MongoDB</b>, supporting service communication and data workflows.',
+      'Contributed to <b>multi-region deployment, networking and reliability</b> using Azure Front Door, NGINX Ingress, private networking and supporting cloud services.',
+      'Performed <b>Kubernetes, CI/CD and infrastructure troubleshooting</b>, investigating deployment failures, connectivity issues and application-level incidents.',
+      'Developed AI-assisted DevOps workflows using <b>Claude Code, custom skills, plugins, hooks and MCP integrations</b> to streamline debugging and repetitive engineering tasks.'
+    ]
+  },
+
+  {
+    id:'forge', sector:'THE FORGE', nav:'TRAINING',
+    place:'right', color:0xff8a3c,
+    eyebrow:'SECTOR 02 · WHERE IT WAS FORGED',
+    big:'The Full-Stack Forge',
+    sub:'TCS Initial Learning Program · Nov 2025 → Feb 2026',
+    pts:[
+      'Completed intensive technical training in <b>Java, Spring Boot, Angular, JDBC, SQL and Unix</b>, alongside software engineering fundamentals.',
+      'Developed a <b>Hotel Management System</b> using Angular and Spring Boot, implementing CRUD operations, booking workflows and REST API integration.',
+      'Worked with <b>Java-based backend development</b>, database connectivity and frontend-backend integration to build a functional full-stack application.'
+    ]
+  },
+
+  {
+    id:'aiml', sector:'THE CORE', nav:'AI / ML',
+    place:'left', color:0x9a7cf5,
+    eyebrow:'SECTOR 03 · MACHINE LEARNING & GENERATIVE AI',
+    big:'Machine Intelligence',
+    sub:'Machine Learning · Generative AI · AI Automation',
+    pts:[
+      '<b>Machine Learning:</b> Developed and evaluated supervised ML models achieving <b>87%+ accuracy</b> across project tasks.',
+      '<b>Model Optimization:</b> Optimized data preprocessing and training workflows, reducing <b>training time by 40%</b>.',
+      '<b>Model Deployment:</b> Integrated trained models with a <b>Flask REST API</b> for real-time predictions and application integration.',
+      '<b>AI Agent Development:</b> Built and configured task-specific <b>AI agents, reusable skills and plugins</b> using Claude Code to automate repetitive engineering workflows.',
+      '<b>Context &amp; Token Optimization:</b> Developed codebase context packs, repository maps and compressed technical references to reduce unnecessary context consumption during AI-assisted debugging.',
+      '<b>Developer Tooling:</b> Created automated log-summarization tools, validation hooks and <b>MCP integrations</b> to improve AI-assisted troubleshooting and engineering productivity.',
+      '<b>Generative AI:</b> Applied Claude, ChatGPT, Gemini and GitHub Copilot for coding, debugging, research and workflow automation.'
+    ]
+  },
+
+  {
+    id:'oss', sector:'THE NETWORK', nav:'OPEN SOURCE',
+    place:'right', color:0x54e08a,
+    eyebrow:'SECTOR 04 · OPEN-SOURCE NETWORK',
+    big:'Open Source',
+    sub:"GirlScript Summer of Code &amp; Social Summer of Code · Jun → Aug 2024",
+    pts:[
+      'Resolved <b>10+ issues</b> and participated in <b>15+ code reviews</b> across open-source repositories.',
+      'Contributed features, fixes and workflow improvements while following collaborative <b>Git and code-review practices</b>.',
+      'Earned the <b>GSSoC Adventurer Badge</b> in recognition of contributions.'
+    ]
+  },
+  {
+    id:'arsenal', sector:'DRY DOCK', nav:'SKILLS',
+    place:'center', color:0x35d6d0,
+    eyebrow:'SECTOR 05 · THE ARSENAL',
+    big:'Systems Aboard',
+    sub:'the technologies powering my work',
+    skillcats:[
+      ['LANGUAGES',[
+        'Java','Python','JavaScript','TypeScript','C++','SQL'
+      ]],
+      ['CLOUD & INFRASTRUCTURE',[
+        'Microsoft Azure','AKS','ACR','Azure Front Door',
+        'Key Vault','AWS','EC2','S3','Lambda'
+      ]],
+      ['DEVOPS & CI/CD',[
+        'Kubernetes','Docker','Helm','Jenkins',
+        'GitHub Actions','Terraform','Infrastructure as Code',
+        'Linux','Bash','PowerShell'
+      ]],
+      ['MONITORING & OBSERVABILITY',[
+        'Prometheus','Grafana','Kubernetes Monitoring',
+        'Log Analysis'
+      ]],
+      ['BACKEND & DATABASES',[
+        'Spring Boot','FastAPI','Node.js','Express',
+        'REST APIs','PostgreSQL','MongoDB','MySQL',
+        'Redis','Kafka'
+      ]],
+      ['FRONTEND DEVELOPMENT',[
+        'React.js','Next.js','Angular',
+        'HTML','CSS','Tailwind CSS'
+      ]],
+      ['AI / ML & AUTOMATION',[
+        'TensorFlow','PyTorch','scikit-learn',
+        'Claude Code','ChatGPT','Gemini','GitHub Copilot',
+        'MCP Integrations','AI Agents','Claude Skills & Plugins',
+        'Hooks & Workflow Automation','Prompt Engineering'
+      ]]
+    ]
+  },
+  {
+    id:'origin', sector:'HOME WORLD', nav:'EDUCATION',
+    place:'left', color:0xffcf5a,
+    eyebrow:'SECTOR 06 · ORIGIN & ACHIEVEMENTS',
+    big:'Where It Began',
+    sub:'VIT Vellore · B.Tech CSE (Bioinformatics) · 2021–2025 · CGPA 8.89',
+    grid:[
+      ['ACADEMIC FOUNDATIONS',[
+        'Operating Systems',
+        'Computer Networks',
+        'Data Structures & Algorithms',
+        'Database Management Systems',
+        'Artificial Intelligence',
+        'Data Analysis',
+        'Design Head · RoboVITics',
+        'Core Member · Creativity Club'
+      ]],
+      ['CERTIFICATIONS & ACHIEVEMENTS',[
+        'AWS Certified Cloud Practitioner',
+        'Google Cloud Digital Leader',
+        'Claude Certified Developer – Foundations',
+        'GenAI E2 Proficiency',
+        'ML A–Z · Udemy',
+        '2nd Runner-Up · YourStory',
+        'Java Gold · 3★ DSA HackerRank',
+        'Silver Badge · CodeChef',
+        '250+ LeetCode Problems'
+      ]]
+    ]
+  },
+  { id:'projects', sector:'THE SHIPYARD', nav:'PROJECTS', place:'right', color:0x5cd6ff,
+    eyebrow:'SECTOR 07 · SHIPPED &amp; DEPLOYED',
+    big:'Things I&rsquo;ve Built',
+    sub:'university projects · live &amp; on GitHub',
+    projects:[
+      { name:'DENTAI', blurb:'CNN dental-health app detecting <b>6 oral conditions at 80%</b> — Streamlit Cloud with Grad-CAM.', tech:'Python · TensorFlow · Keras · OpenCV', code:'https://github.com/Amishachoudhary22/Dental_disease-detection', live:'https://dentaldisease-detection-mdchvwqy7jhbcsqgvhyyei.streamlit.app/' },
+      { name:'AGROSCAN', blurb:'Plant-disease classifier at <b>95% accuracy</b> — real-time diagnosis with image augmentation.', tech:'Python · scikit-learn · Keras · Streamlit', code:'https://github.com/Amishachoudhary22/Potato_disease_Classification', live:'https://potatodiseaseclassification-dfylqqbp8jjjwunxnwwts4.streamlit.app/' },
+      { name:'TASTY FOODS', blurb:'Full-stack food-ordering platform — <b>NextAuth</b> auth, REST APIs &amp; <b>Stripe</b> payments.', tech:'Next.js 14 · MongoDB · Node · Stripe', code:'https://github.com/Amishachoudhary22/Food-Delivery-App', live:'food-delivery-app-5hw8.vercel.app' },
+      { name:'CHATBOT', blurb:'A ChatGPT-style chat app built on <b>Java + Spring Boot</b>, powered by the Gemini API.', tech:'Java · Spring Boot · Gemini API', code:'https://github.com/Amishachoudhary22/AI_Chatbot', live:'#' }
+    ]},
+  { id:'contact', sector:'ARRIVAL', nav:'CONTACT', place:'center', color:0xff6ad5,
+    eyebrow:'SECTOR 08 · ESTABLISH CONTACT',
+    big:'Let&rsquo;s build something.',
+    note:'Like what you saw? Open a channel.',
+    form:true,
+    links:[['LINKEDIN','https://www.linkedin.com/in/amisha-choudhary-8957a7221/'],['GITHUB','https://github.com/Amishachoudhary22'],/*TODO*/['EMAIL','mailto:amishachoudhary2212@gmail.com'],/*TODO*/['CALL','tel:+919631121762']] },
+  { id:'ending', sector:'FAREWELL', nav:'END', place:'center', color:0x93d19a,
+    eyebrow:'JOURNEY&rsquo;S END',
+    big:'Say hi to the Captain',
+    note:'Thanks for exploring my journey. The next mission is already in progress. Let’s build something extraordinary.',
+    restart:true }
+];
+const N=ACTS.length;
+const seg=1/(N-1);
+
+/* --------------------------- build DOM sections -------------------------- */
+/* one full-height snap panel per sector — these create the scroll length and
+   make every destination a hard stop (see CSS scroll-snap). */
+const track=document.getElementById('track');
+for(let i=0;i<N;i++){ const d=document.createElement('div'); d.className='panel'; track.appendChild(d); }
+
+const sectionsRoot=document.getElementById('sections');
+const sectEls=ACTS.map((a)=>{
+  const el=document.createElement('section'); el.className='sect al-'+a.place+(a.id==='title'?' sect-title':'');
+  let d=0.20; const S=()=>{ d+=0.13; return ' style="--d:'+d.toFixed(2)+'s"'; };
+  let h='<div class="wrap">';
+  h+='<div class="eyebrow"'+S()+'>'+a.eyebrow+'</div>';
+  h+='<h2 class="big"'+S()+'>'+a.big+'</h2>';
+  if(a.role) h+='<div class="role"'+S()+'>'+a.role+'</div>';
+  if(a.sub)  h+='<div class="sub"'+S()+'>'+a.sub+'</div>';
+  if(a.note) h+='<p class="note"'+S()+'>'+a.note+'</p>';
+  if(a.form){ h+='<div class="cform"'+S()+'>'+
+      '<input class="cf" id="cf-name" type="text" placeholder="YOUR NAME" autocomplete="name" maxlength="80">'+
+      '<input class="cf" id="cf-email" type="email" placeholder="YOUR EMAIL" autocomplete="email" maxlength="120">'+
+      '<textarea class="cf" id="cf-msg" rows="3" placeholder="YOUR MESSAGE" maxlength="1200"></textarea>'+
+      '<button type="button" id="cf-send" class="cf-send">▸ TRANSMIT</button>'+
+      '<div id="cf-status" class="cf-status" role="status" aria-live="polite"></div>'+
+    '</div>'; }
+  if(a.pts){ h+='<ul class="pts"'+S()+'>'; a.pts.forEach(p=>h+='<li'+S()+'>'+p+'</li>'); h+='</ul>'; }
+  if(a.projects){ h+='<div class="projs"'+S()+'>'; a.projects.forEach(p=>{ const S2=()=>{ d+=0.1; return ' style="--d:'+d.toFixed(2)+'s"'; };
+      h+='<div class="proj"'+S2()+'><div class="proj-h"><span class="proj-n">'+p.name+'</span>'+
+         '<span class="proj-l"><a href="'+p.code+'" target="_blank" rel="noopener">code ↗</a><a href="'+p.live+'" target="_blank" rel="noopener">live ↗</a></span></div>'+
+         '<div class="proj-b">'+p.blurb+'</div><div class="proj-t">'+p.tech+'</div></div>'; }); h+='</div>'; }
+  if(a.grid){ h+='<div class="grid2"'+S()+'>'; a.grid.forEach(([g,items])=>{ h+='<div class="gcol"'+S()+'><div class="gh">'+g+'</div><ul>';
+      items.forEach(it=>h+='<li>'+it+'</li>'); h+='</ul></div>'; }); h+='</div>'; }
+  if(a.chips){ h+='<div class="chips"'+S()+'>'; let cd=d+0.06; a.chips.forEach(c=>{ cd+=0.028; h+='<span style="--d:'+cd.toFixed(2)+'s">'+c+'</span>'; }); d=cd; h+='</div>'; }
+  if(a.skillcats){ h+='<div class="skcats"'+S()+'>'; a.skillcats.forEach(([cat,skills])=>{
+      h+='<div class="skcat"><div class="skcat-h">'+cat+'</div><div class="skchips">';
+      skills.forEach(sk=>h+='<span>'+sk+'</span>'); h+='</div></div>'; }); h+='</div>'; }
+  if(a.dock) h+='<div class="dock-note"'+S()+'>'+a.dock+'</div>';
+  if(a.links){ h+='<div class="links"'+S()+'>'; let ld=d+0.06; a.links.forEach(([l,href])=>{ ld+=0.1; const ext=href.startsWith('http')||href==='#';
+      h+='<a style="--d:'+ld.toFixed(2)+'s" href="'+href+'"'+(ext?' target="_blank" rel="noopener"':'')+'>'+l+'</a>'; }); h+='</div>'; }
+  if(a.restart){ d+=0.12; h+='<button type="button" id="restart-btn" class="restart" style="--d:'+d.toFixed(2)+'s">⟲ START OVER</button>'; }
+  h+='</div>';
+  el.innerHTML=h; sectionsRoot.appendChild(el); return el;
+});
+
+/* ----------------------------- progress rail ----------------------------- */
+const railMarks=document.getElementById('rail-marks');
+const railFill=document.getElementById('rail-fill');
+const rmEls=ACTS.map((a,i)=>{
+  const b=document.createElement('button'); b.className='rm'; b.style.top=(i/(N-1)*100)+'%';
+  b.innerHTML='<span class="rl">'+a.sector+'</span>';
+  b.addEventListener('click',()=>scrollToP(i/(N-1)));
+  b.addEventListener('mouseenter',()=>Audio.blip(1250,.05,'sine',.05));
+  railMarks.appendChild(b); return b;
+});
+
+/* ----------------------------- top nav ----------------------------- */
+const topnav=document.getElementById('topnav');
+const navEls=ACTS.map((a,i)=>{
+  const b=document.createElement('button'); b.className='navlink'; b.textContent=a.nav||a.sector;
+  b.addEventListener('click',()=>scrollToP(i/(N-1)));
+  b.addEventListener('mouseenter',()=>Audio.blip(1250,.05,'sine',.05));
+  topnav.appendChild(b); return b;
+});
+const brandBtn=document.getElementById('brand');
+if(brandBtn) brandBtn.addEventListener('click',()=>scrollToP(0));
+const restartBtn=document.getElementById('restart-btn');
+if(restartBtn) restartBtn.addEventListener('click',()=>{ scrollToP(0); Audio.blip(680,.12,'sine',.1); });
+
+/* ========================================================================
+   THREE.JS
+   ======================================================================== */
+const canvas=document.getElementById('space');
+let renderer;
+try{ renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true}); }
+catch(e){ document.body.innerHTML='<div style="display:flex;height:100vh;align-items:center;justify-content:center;font-family:monospace;color:#7ee7ff">WebGL unavailable.</div>'; throw e; }
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+
+/* second renderer + scene, just for the craft — draws on the #ufo canvas above the tint */
+const uCanvas=document.getElementById('ufo');
+const uRenderer=new THREE.WebGLRenderer({canvas:uCanvas,antialias:true,alpha:true});
+uRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
+uRenderer.setSize(innerWidth,innerHeight);
+const uScene=new THREE.Scene();
+uScene.add(new THREE.AmbientLight(0x2c3c66,1.15));
+uScene.add(new THREE.HemisphereLight(0x3a5aa0,0x0a0d1c,0.55));
+const uKey=new THREE.DirectionalLight(0xbcd6ff,0.95); uKey.position.set(-6,10,6); uScene.add(uKey);
+const uFill=new THREE.PointLight(0x7ee7ff,1.0,140); uScene.add(uFill);
+
+const scene=new THREE.Scene();
+const sceneFog=new THREE.FogExp2(0x05070f,0.0026); scene.fog=sceneFog;
+const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,2000);
+
+scene.add(new THREE.AmbientLight(0x2c3c66,1.1));
+scene.add(new THREE.HemisphereLight(0x3a5aa0,0x0a0d1c,0.5));
+const key=new THREE.DirectionalLight(0xbcd6ff,0.9); key.position.set(-6,10,6); scene.add(key);
+const fill=new THREE.PointLight(0x7ee7ff,1.0,120); scene.add(fill);
+
+/* textures */
+function cvs(s,d){const c=document.createElement('canvas');c.width=c.height=s;d(c.getContext('2d'),s);return new THREE.CanvasTexture(c);}
+function glow(a,b){return cvs(256,(x,s)=>{const g=x.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);g.addColorStop(0,a);g.addColorStop(.42,b);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,s,s);});}
+const dot=cvs(64,(x,s)=>{const g=x.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);g.addColorStop(0,'#fff');g.addColorStop(.5,'rgba(255,255,255,.4)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,s,s);});
+function planetTex(base,acc,band){return cvs(512,(x,s)=>{x.fillStyle=base;x.fillRect(0,0,s,s);
+  if(band){for(let y=0;y<s;y+=6+Math.random()*20){x.globalAlpha=.1+Math.random()*.22;x.fillStyle=Math.random()>.5?acc:'rgba(0,0,0,.2)';x.fillRect(0,y,s,6+Math.random()*22);}}
+  else{for(let i=0;i<80;i++){x.globalAlpha=.05+Math.random()*.15;x.fillStyle=Math.random()>.5?acc:'rgba(0,0,0,.45)';x.beginPath();x.ellipse(Math.random()*s,Math.random()*s,8+Math.random()*60,5+Math.random()*26,Math.random()*Math.PI,0,7);x.fill();}}x.globalAlpha=1;});}
+function textSprite(text,size,color){
+  const font=64,pad=24; const m=document.createElement('canvas').getContext('2d'); m.font=font+'px monospace';
+  const w=Math.ceil(m.measureText(text).width);
+  const c=document.createElement('canvas'); c.width=w+pad*2; c.height=font+pad*2; const x=c.getContext('2d');
+  x.font=font+'px monospace'; x.textAlign='center'; x.textBaseline='middle';
+  x.shadowColor=color; x.shadowBlur=18; x.fillStyle=color; x.fillText(text,c.width/2,c.height/2);
+  const t=new THREE.CanvasTexture(c);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false,fog:false}));
+  sp.scale.set((c.width/c.height)*size,size,1); return sp;
+}
+
+/* ---- starfield (ignores fog so it never fades) ---- */
+function stars(count,spread,size,tint){
+  const g=new THREE.BufferGeometry(),p=new Float32Array(count*3),col=new Float32Array(count*3),c=new THREE.Color();
+  for(let i=0;i<count;i++){ // wide slab around the whole flight corridor
+    p[i*3]=(Math.random()*2-1)*spread; p[i*3+1]=(Math.random()*2-1)*spread*0.5; p[i*3+2]=-Math.random()*1400+200;
+    c.set(tint).multiplyScalar(.4+Math.random()*.6); col[i*3]=c.r;col[i*3+1]=c.g;col[i*3+2]=c.b; }
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  g.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const pt=new THREE.Points(g,new THREE.PointsMaterial({size,map:dot,transparent:true,depthWrite:false,vertexColors:true,blending:THREE.AdditiveBlending,sizeAttenuation:true,fog:false}));
+  scene.add(pt); return pt;
+}
+stars(3200,520,1.2,0xbcd2ff);
+const starsB=stars(1400,340,1.9,0x9fe8ff);
+
+/* ---- distant nebulae (far background, off-axis, faint — they add depth without crowding text) ---- */
+function farNeb(x,y,z,scale,color,op){
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:glow(color,'rgba(0,0,0,0)'),transparent:true,opacity:op,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));
+  s.position.set(x,y,z); s.scale.set(scale,scale,1); scene.add(s);
+}
+farNeb(-140,70,-250,320,'rgba(120,80,220,.5)',0.11);
+farNeb(150,-80,-470,380,'rgba(40,150,180,.5)',0.09);
+farNeb(-70,100,-660,340,'rgba(210,70,150,.5)',0.08);
+farNeb(120,60,-820,420,'rgba(80,120,230,.5)',0.07);
+
+/* ---- shooting stars (spawn across the view wherever the camera is) ---- */
+const METN=5, mg=new THREE.BufferGeometry();
+const mpos=new Float32Array(METN*6), mcol=new Float32Array(METN*6);
+mg.setAttribute('position',new THREE.BufferAttribute(mpos,3));
+mg.setAttribute('color',new THREE.BufferAttribute(mcol,3));
+const meteors=new THREE.LineSegments(mg,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));
+meteors.frustumCulled=false;
+scene.add(meteors);
+const met=[]; for(let i=0;i<METN;i++) met.push({active:false,delay:Math.random()*5,life:0,max:1,pos:new THREE.Vector3(),vel:new THREE.Vector3()});
+
+/* ---- mood nebula that recolours per region ---- */
+const moodMat=new THREE.SpriteMaterial({map:glow('rgba(255,255,255,.6)','rgba(120,120,120,.1)'),transparent:true,opacity:.34,depthWrite:false,blending:THREE.AdditiveBlending,fog:false});
+const moodNeb=new THREE.Sprite(moodMat); moodNeb.scale.set(430,430,1); scene.add(moodNeb);
+
+/* ======================= HERO SET PIECES ======================= */
+const HERO=[
+  V(0,-2,-26),    // 0 home world
+  V(0,0,-96),     // 1 devops orbital system
+  V(0,-3,-166),   // 2 forge (ILP) — shard field
+  V(0,2,-236),    // 3 neural core (AI/ML) — wireframe, we pass through it
+  V(0,3,-306),    // 4 open-source network — wireframe
+  V(0,6,-378),    // 5 skills station — flown alongside
+  V(0,-2,-446),   // 6 origin world + medals
+  V(0,4,-508),    // 7 projects — the shipyard (floating build slabs)
+  V(0,4,-580),    // 8 arrival beacon
+  V(0,3,-660)     // 9 farewell — open space, the captain waves you off
+];
+const pieces=[];
+const cyan=()=>new THREE.Color(0x7ee7ff);
+
+/* 0 · home world */
+(function(){
+  const g=new THREE.Group(); g.position.copy(HERO[0]); scene.add(g);
+  const p=new THREE.Mesh(new THREE.SphereGeometry(6,48,48),new THREE.MeshStandardMaterial({map:planetTex('#1c3f6e','#6fa0d8',false),roughness:.9,metalness:.1,emissive:0x0a1830,emissiveIntensity:.2}));
+  g.add(p);
+  const atm=new THREE.Mesh(new THREE.SphereGeometry(6.5,48,48),new THREE.MeshBasicMaterial({color:0x5aa0ff,transparent:true,opacity:.12,side:THREE.BackSide,blending:THREE.AdditiveBlending}));
+  g.add(atm);
+  const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:glow('rgba(110,160,240,.5)','rgba(40,80,150,.08)'),transparent:true,opacity:.6,depthWrite:false,blending:THREE.AdditiveBlending}));
+  gl.scale.set(26,26,1); g.add(gl);
+  pieces.push({update:(t)=>{p.rotation.y=t*0.05;}});
+})();
+
+/* 1 · orbital system — planet + ring + orbiting containers + satellites (DevOps) */
+(function(){
+  const g=new THREE.Group(); g.position.copy(HERO[1]); scene.add(g);
+  const p=new THREE.Mesh(new THREE.SphereGeometry(5,48,48),new THREE.MeshStandardMaterial({map:planetTex('#20407a','#7cc0ff',true),roughness:.75,metalness:.2,emissive:0x0a1c40,emissiveIntensity:.25}));
+  g.add(p);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(6.5,9.5,90),new THREE.MeshBasicMaterial({map:cvs(256,(x,s)=>{for(let r=s*.2;r<s*.5;r+=1.4){x.strokeStyle='rgba(126,231,255,'+(0.03+Math.random()*.28)+')';x.lineWidth=1+Math.random()*1.4;x.beginPath();x.arc(s/2,s/2,r,0,7);x.stroke();}}),side:THREE.DoubleSide,transparent:true,opacity:.75,depthWrite:false,blending:THREE.AdditiveBlending}));
+  ring.rotation.x=Math.PI/2-0.28; g.add(ring);
+  const cubes=new THREE.Group(); g.add(cubes);
+  const cg=new THREE.BoxGeometry(0.5,0.5,0.5);
+  for(let i=0;i<12;i++){ const m=new THREE.Mesh(cg,new THREE.MeshStandardMaterial({color:0x9fe8ff,emissive:0x2a7f9f,emissiveIntensity:1,roughness:.4,metalness:.4}));
+    m.userData={a:(i/12)*7,r:8+(i%3)*0.7,y:(Math.random()*2-1)*1.2}; cubes.add(m); }
+  const sats=new THREE.Group(); g.add(sats);
+  for(let i=0;i<3;i++){ const s=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,1.2,8),new THREE.MeshStandardMaterial({color:0xcdd8ef,metalness:.7,roughness:.3}));
+    s.userData={a:i*2.1,r:11+i*1.5}; sats.add(s); }
+  pieces.push({update:(t)=>{ p.rotation.y=t*0.12; ring.rotation.z=t*0.05;
+    cubes.children.forEach(m=>{const a=m.userData.a+t*0.5;m.position.set(Math.cos(a)*m.userData.r,m.userData.y,Math.sin(a)*m.userData.r);m.rotation.x=t;m.rotation.y=t*0.8;});
+    sats.children.forEach(s=>{const a=s.userData.a-t*0.3;s.position.set(Math.cos(a)*s.userData.r,Math.sin(a*1.3)*2,Math.sin(a)*s.userData.r);s.lookAt(g.position);});
+  }});
+})();
+
+/* neural core — wireframe icosphere + pulsing nodes + travelling signals (AI/ML) → position 3 */
+(function(){
+  const g=new THREE.Group(); g.position.copy(HERO[3]); scene.add(g);
+  const geo=new THREE.IcosahedronGeometry(9,3);
+  const wire=new THREE.LineSegments(new THREE.WireframeGeometry(geo),new THREE.LineBasicMaterial({color:0x9a7cf5,transparent:true,opacity:.28,blending:THREE.AdditiveBlending}));
+  g.add(wire);
+  // node points at vertices
+  const vpos=geo.attributes.position;
+  const npos=new Float32Array(vpos.count*3);
+  for(let i=0;i<vpos.count*3;i++) npos[i]=vpos.array[i];
+  const ng=new THREE.BufferGeometry(); ng.setAttribute('position',new THREE.BufferAttribute(npos,3));
+  const nodes=new THREE.Points(ng,new THREE.PointsMaterial({size:0.55,map:dot,color:0xd8c8ff,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));
+  g.add(nodes);
+  const core=new THREE.Mesh(new THREE.SphereGeometry(2,24,24),new THREE.MeshBasicMaterial({color:0xc9b6ff,transparent:true,opacity:.5,blending:THREE.AdditiveBlending}));
+  g.add(core);
+  const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:glow('rgba(154,124,245,.6)','rgba(80,50,160,.1)'),transparent:true,opacity:.6,depthWrite:false,blending:THREE.AdditiveBlending}));
+  gl.scale.set(40,40,1); g.add(gl);
+  // travelling signal sprites between random vertices
+  const sig=[]; for(let i=0;i<10;i++){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:dot,color:0xffffff,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,fog:false})); s.scale.set(0.8,0.8,1); g.add(s); sig.push({sp:s,reset:true}); }
+  function vtx(i){return new THREE.Vector3(vpos.getX(i),vpos.getY(i),vpos.getZ(i));}
+  pieces.push({update:(t)=>{ g.rotation.y=t*0.14; g.rotation.x=Math.sin(t*0.2)*0.2;
+    nodes.material.size=0.45+Math.abs(Math.sin(t*2))*0.35; core.material.opacity=0.35+Math.abs(Math.sin(t*1.5))*0.3;
+    sig.forEach(o=>{ if(o.reset){o.a=vtx((Math.random()*vpos.count)|0);o.b=vtx((Math.random()*vpos.count)|0);o.k=0;o.spd=0.4+Math.random()*0.6;o.reset=false;}
+      o.k+=0.016*o.spd; if(o.k>=1)o.reset=true; o.sp.position.lerpVectors(o.a,o.b,smooth(o.k)); o.sp.material.opacity=Math.sin(o.k*Math.PI); });
+  }});
+})();
+
+/* the forge — metallic shards + rising embers (ILP training / foundation) → position 2 */
+(function(){
+  const g=new THREE.Group(); g.position.copy(HERO[2]); scene.add(g);
+  const mat=new THREE.MeshStandardMaterial({color:0x6a5040,metalness:.85,roughness:.4,emissive:0x2a1204,emissiveIntensity:.5});
+  const shards=[]; for(let i=0;i<12;i++){ const s=new THREE.Mesh(new THREE.IcosahedronGeometry(0.7+Math.random()*1.6,0),mat);
+    s.position.set((Math.random()*2-1)*6,(Math.random()*2-1)*5,(Math.random()*2-1)*6); s.userData={rx:Math.random()*0.4,ry:Math.random()*0.4}; g.add(s); shards.push(s); }
+  // embers
+  const en=320; const eg=new THREE.BufferGeometry(); const ep=new Float32Array(en*3); const ed=[];
+  for(let i=0;i<en;i++){ ep[i*3]=(Math.random()*2-1)*10; ep[i*3+1]=(Math.random()*2-1)*8; ep[i*3+2]=(Math.random()*2-1)*10; ed.push({sp:0.5+Math.random()*1.5}); }
+  eg.setAttribute('position',new THREE.BufferAttribute(ep,3));
+  const embers=new THREE.Points(eg,new THREE.PointsMaterial({size:0.5,map:dot,color:0xff9a4a,transparent:true,opacity:.9,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));
+  g.add(embers);
+  const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:glow('rgba(255,140,60,.5)','rgba(150,50,10,.08)'),transparent:true,opacity:.55,depthWrite:false,blending:THREE.AdditiveBlending}));
+  gl.scale.set(34,34,1); g.add(gl);
+  pieces.push({update:(t,dt)=>{ shards.forEach(s=>{s.rotation.x+=s.userData.rx*0.02;s.rotation.y+=s.userData.ry*0.02;});
+    const a=eg.attributes.position.array; for(let i=0;i<en;i++){ a[i*3+1]+=ed[i].sp*0.03; if(a[i*3+1]>8)a[i*3+1]=-8; } eg.attributes.position.needsUpdate=true;
+  }});
+})();
+
+/* 4 · network constellation — nodes + connecting lines (open source) */
+(function(){
+  const g=new THREE.Group(); g.position.copy(HERO[4]); scene.add(g);
+  const pts=[]; const NODES=34;
+  for(let i=0;i<NODES;i++) pts.push(V((Math.random()*2-1)*10,(Math.random()*2-1)*8,(Math.random()*2-1)*10));
+  const ng=new THREE.BufferGeometry().setFromPoints(pts);
+  const nodes=new THREE.Points(ng,new THREE.PointsMaterial({size:0.7,map:dot,color:0x9fffc4,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));
+  g.add(nodes);
+  // lines between nearby nodes
+  const lp=[]; for(let i=0;i<NODES;i++)for(let j=i+1;j<NODES;j++){ if(pts[i].distanceTo(pts[j])<6){ lp.push(pts[i].x,pts[i].y,pts[i].z,pts[j].x,pts[j].y,pts[j].z); } }
+  const lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.BufferAttribute(new Float32Array(lp),3));
+  const lines=new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0x54e08a,transparent:true,opacity:.3,blending:THREE.AdditiveBlending}));
+  g.add(lines);
+  const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:glow('rgba(84,224,138,.45)','rgba(20,120,60,.08)'),transparent:true,opacity:.5,depthWrite:false,blending:THREE.AdditiveBlending}));
+  gl.scale.set(34,34,1); g.add(gl);
+  pieces.push({update:(t)=>{ g.rotation.y=t*0.1; g.rotation.z=Math.sin(t*0.15)*0.15; lines.material.opacity=0.2+Math.abs(Math.sin(t*1.2))*0.25; nodes.material.size=0.6+Math.abs(Math.sin(t*2))*0.25; }});
+})();
+
+/* skills station — long modular hull flown alongside (skills listed in the panel, not on the hull) */
+(function(){
+  const g=new THREE.Group(); g.position.copy(HERO[5]); scene.add(g);
+  const hull=new THREE.MeshStandardMaterial({color:0xc6d2e8,metalness:.8,roughness:.34});
+  const dark=new THREE.MeshStandardMaterial({color:0x223050,metalness:.7,roughness:.4});
+  const glowM=new THREE.MeshStandardMaterial({color:0x7ee7ff,emissive:0x1e6b82,emissiveIntensity:1.3,roughness:.3});
+  const panel=new THREE.MeshStandardMaterial({color:0x1a3d8f,metalness:.6,roughness:.25,emissive:0x0a2050,emissiveIntensity:.5,side:THREE.DoubleSide});
+  const spine=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,46,16),hull); spine.rotation.x=Math.PI/2; g.add(spine);
+  const MODS=8;
+  for(let i=0;i<MODS;i++){
+    const z=-20+i*(40/(MODS-1));
+    const mod=new THREE.Mesh(new THREE.BoxGeometry(2.2,2.2,2.6),i%2?dark:hull); mod.position.set(0,0,z); g.add(mod);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(1.7,0.12,8,32),glowM); ring.position.set(0,0,z); g.add(ring);
+    const pa=new THREE.Mesh(new THREE.BoxGeometry(6,0.06,1.8),panel); pa.position.set(0,2.4,z); g.add(pa);
+    const pb=pa.clone(); pb.position.y=-2.4; g.add(pb);
+  }
+  const dish=new THREE.Mesh(new THREE.ConeGeometry(1.1,1.6,16),hull); dish.position.set(0,0,-24); dish.rotation.x=-Math.PI/2; g.add(dish);
+  pieces.push({update:(t)=>{ g.position.y=HERO[5].y+Math.sin(t*0.4)*0.5; g.rotation.z=Math.sin(t*0.15)*0.05; }});
+})();
+
+/* 6 · origin world + orbiting medals (education + honors) */
+(function(){
+  const g=new THREE.Group(); g.position.copy(HERO[6]); scene.add(g);
+  const p=new THREE.Mesh(new THREE.SphereGeometry(6,48,48),new THREE.MeshStandardMaterial({map:planetTex('#2a4a2f','#8fe0a0',false),roughness:.85,metalness:.15,emissive:0x0a2012,emissiveIntensity:.2}));
+  g.add(p);
+  const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:glow('rgba(255,207,90,.45)','rgba(150,110,20,.08)'),transparent:true,opacity:.5,depthWrite:false,blending:THREE.AdditiveBlending}));
+  gl.scale.set(30,30,1); g.add(gl);
+  const medals=new THREE.Group(); g.add(medals);
+  const gold=new THREE.MeshStandardMaterial({color:0xffd54a,metalness:.9,roughness:.2,emissive:0x5a3f00,emissiveIntensity:.5});
+  for(let i=0;i<10;i++){ const m=new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.7,0.16,20),gold);
+    m.userData={a:(i/10)*7,r:6+(i%2)*1.4,t:Math.random()*7}; medals.add(m); }
+  pieces.push({update:(t)=>{ p.rotation.y=t*0.08;
+    medals.children.forEach(m=>{const a=m.userData.a+t*0.25;m.position.set(Math.cos(a)*m.userData.r,Math.sin(a*1.4)*2.5,Math.sin(a)*m.userData.r);m.rotation.x=Math.PI/2;m.rotation.z=t+m.userData.t;});
+  }});
+})();
+
+/* 7 · projects — a spiral galaxy: golden core spiralling out into blue-violet arms */
+(function(){
+  const g=new THREE.Group(); g.position.copy(HERO[7]); g.rotation.set(-0.95,0.4,0.14); scene.add(g);
+  const spinner=new THREE.Group(); g.add(spinner);
+  const count=3800, radius=14, branches=3, spin=0.9;
+  const inside=new THREE.Color(0xffe0a8), outside=new THREE.Color(0x6a86ff);
+  const pos=new Float32Array(count*3), col=new Float32Array(count*3), c=new THREE.Color();
+  for(let i=0;i<count;i++){
+    const r=Math.pow(Math.random(),2.3)*radius;
+    const angle=((i%branches)/branches)*Math.PI*2 + r*spin;
+    const sp=(p)=>Math.pow(Math.random(),3)*(Math.random()<.5?1:-1)*p;
+    pos[i*3]=Math.cos(angle)*r+sp(0.5+r*0.05); pos[i*3+1]=sp(0.35+r*0.02); pos[i*3+2]=Math.sin(angle)*r+sp(0.5+r*0.05);
+    c.copy(inside).lerp(outside, Math.min(r/radius,1)).multiplyScalar(0.7+Math.random()*0.5);
+    col[i*3]=c.r;col[i*3+1]=c.g;col[i*3+2]=c.b;
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const stars=new THREE.Points(geo,new THREE.PointsMaterial({size:0.34,map:dot,vertexColors:true,transparent:true,opacity:.95,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));
+  spinner.add(stars);
+  // bright golden core
+  const core=new THREE.Mesh(new THREE.SphereGeometry(0.9,20,20),new THREE.MeshBasicMaterial({color:0xfff1d6,transparent:true,opacity:.85,blending:THREE.AdditiveBlending})); spinner.add(core);
+  const coreGl=new THREE.Sprite(new THREE.SpriteMaterial({map:glow('rgba(255,240,210,.9)','rgba(210,160,90,.14)'),transparent:true,opacity:.9,depthWrite:false,blending:THREE.AdditiveBlending,fog:false})); coreGl.scale.set(13,13,1); spinner.add(coreGl);
+  // soft galactic halo
+  const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:glow('rgba(130,150,255,.4)','rgba(40,50,140,.05)'),transparent:true,opacity:.4,depthWrite:false,blending:THREE.AdditiveBlending,fog:false})); halo.scale.set(46,46,1); g.add(halo);
+  pieces.push({update:(t)=>{ spinner.rotation.y=t*0.055; core.material.opacity=0.7+Math.abs(Math.sin(t*1.1))*0.22; }});
+})();
+
+/* 8 · arrival beacon — gateway ring + pulsing core + converging particles */
+(function(){
+  const g=new THREE.Group(); g.position.copy(HERO[8]); scene.add(g);
+  const gate=new THREE.Mesh(new THREE.TorusGeometry(7,0.4,20,80),new THREE.MeshStandardMaterial({color:0xff9ad8,metalness:.7,roughness:.3,emissive:0x7a1a50,emissiveIntensity:.9}));
+  g.add(gate);
+  const gate2=new THREE.Mesh(new THREE.TorusGeometry(9,0.15,16,80),new THREE.MeshBasicMaterial({color:0xff6ad5,transparent:true,opacity:.5,blending:THREE.AdditiveBlending}));
+  g.add(gate2);
+  const core=new THREE.Mesh(new THREE.SphereGeometry(2.4,32,32),new THREE.MeshBasicMaterial({color:0xffd0f0,transparent:true,opacity:.6,blending:THREE.AdditiveBlending}));
+  g.add(core);
+  const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:glow('rgba(255,106,213,.6)','rgba(120,20,80,.1)'),transparent:true,opacity:.65,depthWrite:false,blending:THREE.AdditiveBlending}));
+  gl.scale.set(38,38,1); g.add(gl);
+  // converging particles
+  const pn=160; const pg=new THREE.BufferGeometry(); const pp=new Float32Array(pn*3); const pd=[];
+  for(let i=0;i<pn;i++){ const a=Math.random()*7,r=9+Math.random()*9; pp[i*3]=Math.cos(a)*r;pp[i*3+1]=Math.sin(a)*r;pp[i*3+2]=(Math.random()*2-1)*6; pd.push({a,r,z:pp[i*3+2]}); }
+  pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
+  const parts=new THREE.Points(pg,new THREE.PointsMaterial({size:0.5,map:dot,color:0xffc0ec,transparent:true,opacity:.9,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));
+  g.add(parts);
+  pieces.push({update:(t)=>{ gate.rotation.z=t*0.15; gate2.rotation.z=-t*0.2; core.material.opacity=0.45+Math.abs(Math.sin(t*1.6))*0.35; core.scale.setScalar(1+Math.sin(t*1.6)*0.12);
+    const a=pg.attributes.position.array; for(let i=0;i<pn;i++){ pd[i].r-=0.05; if(pd[i].r<1.5)pd[i].r=18; a[i*3]=Math.cos(pd[i].a+t*0.2)*pd[i].r; a[i*3+1]=Math.sin(pd[i].a+t*0.2)*pd[i].r; } pg.attributes.position.needsUpdate=true;
+  }});
+})();
+
+/* ======================= FLIGHT PATH ======================= */
+/* One camera keyframe per sector. We sample the curve by segment-parameter
+   (getPoint, not arc-length) so that at each snapped stop P = i/(N-1) the
+   camera sits EXACTLY on CAM[i] looking at HERO[i] — a composed shot every time. */
+const CAM=[
+  V(0,3,8),       // 0 title — home world sits below the name
+  V(15,8,-70),    // 1 devops — banked above the orbital system
+  V(-13,4,-150),  // 2 forge — off the port bow of the shard field
+  V(6,4,-224),    // 3 neural — just outside the wireframe sphere
+  V(-8,7,-292),   // 4 network — facing the constellation
+  V(-14,7,-374),  // 5 station — gliding alongside the hull
+  V(-15,4,-420),  // 6 origin — looking down on the home world
+  V(-13,5,-482),  // 7 projects — approaching the build slabs
+  V(0,5,-550),    // 8 beacon — dead ahead, holding short of the gate
+  V(0,5,-620)     // 9 farewell — settled, facing open space
+];
+const camCurve=new THREE.CatmullRomCurve3(CAM,false,'centripetal',0.5);
+/* The camera aims a little to the side of each landmark (opposite the text) so the
+   two don't crowd each other — left-text sectors push the landmark right, and vice-versa. */
+const LOOKAT=[
+  V(0,-2,-26),    // 0 center
+  V(-7,0,-96),    // 1 devops (text left)  → planet sits right
+  V(6,-3,-166),   // 2 forge  (text right) → sits left
+  V(-4,2,-236),   // 3 neural (text left)  → sits right
+  V(5,3,-306),    // 4 network(text right) → sits left
+  V(0,6,-378),    // 5 center
+  V(-7,-2,-446),  // 6 origin (text left)  → sits right
+  V(5,4,-508),    // 7 projects(text right)→ sits left
+  V(0,4,-580),    // 8 center
+  V(0,3,-660)     // 9 center — the send-off
+];
+const lookCurve=new THREE.CatmullRomCurve3(LOOKAT,false,'centripetal',0.5);
+
+/* ======================= CHASE CRAFT (UFO) ======================= */
+const craft=new THREE.Group(); uScene.add(craft);
+let craftLights, craftAlien;
+(function(){
+  const hull=new THREE.MeshStandardMaterial({color:0x2a3350,metalness:.9,roughness:.3,emissive:0x0c1430,emissiveIntensity:.4});
+  const disc=new THREE.Mesh(new THREE.SphereGeometry(1.5,36,18),hull); disc.scale.set(1,.3,1); craft.add(disc);
+
+  /* alien pilot (inside the dome, faces the viewer via lookAt in the loop) — eyes on -z (front) */
+  craftAlien=new THREE.Group();
+  const skin=new THREE.MeshStandardMaterial({color:0x93d19a,roughness:.55,metalness:.1,emissive:0x163a1c,emissiveIntensity:.4});
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.26,20,20),skin); head.scale.set(0.82,1.14,0.82); head.position.y=0.17; craftAlien.add(head);
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.18,0.26,10),skin); body.position.y=-0.14; craftAlien.add(body);
+  const eyeMat=new THREE.MeshStandardMaterial({color:0x08080e,roughness:.15,metalness:.6});
+  const eyeGeo=new THREE.SphereGeometry(0.1,14,14);
+  [-1,1].forEach(sx=>{ const e=new THREE.Mesh(eyeGeo,eyeMat); e.scale.set(0.6,1.25,0.5); e.position.set(0.1*sx,0.18,-0.19); e.rotation.set(0.15,0,-0.5*sx); craftAlien.add(e);
+    const hi=new THREE.Mesh(new THREE.SphereGeometry(0.022,6,6),new THREE.MeshBasicMaterial({color:0xffffff})); hi.position.set(0.11*sx,0.235,-0.265); craftAlien.add(hi); });
+  craftAlien.position.set(0,0.3,0); craftAlien.scale.setScalar(0.92); craft.add(craftAlien);
+
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(0.7,28,20),new THREE.MeshStandardMaterial({color:0x9fe8ff,emissive:0x2a7f9f,emissiveIntensity:1,transparent:true,opacity:.72,roughness:.1})); dome.position.y=0.4; dome.scale.set(1,.9,1); craft.add(dome);
+  const under=new THREE.Sprite(new THREE.SpriteMaterial({map:glow('rgba(126,231,255,.9)','rgba(60,150,190,.15)'),transparent:true,opacity:.7,depthWrite:false,blending:THREE.AdditiveBlending,fog:false})); under.scale.set(5,5,1); under.position.y=-0.3; craft.add(under);
+  craftLights=new THREE.Group(); craft.add(craftLights);
+  const lg=new THREE.SphereGeometry(0.1,10,10);
+  for(let i=0;i<10;i++){ const a=(i/10)*7; const m=new THREE.Mesh(lg,new THREE.MeshBasicMaterial({color:i%4?0x9fe8ff:0xffb757})); m.position.set(Math.cos(a)*1.4,-0.02,Math.sin(a)*1.4); craftLights.add(m); }
+})();
+
+/* the full captain — emerges from the UFO at the very end and waves (hidden otherwise) */
+let fullAlien, alienWave;
+(function(){
+  fullAlien=new THREE.Group(); fullAlien.visible=false;
+  const skin=new THREE.MeshStandardMaterial({color:0x93d19a,roughness:.55,metalness:.1,emissive:0x184a20,emissiveIntensity:.5});
+  const eyeMat=new THREE.MeshStandardMaterial({color:0x0a0a12,roughness:.12,metalness:.5});
+  // ---- head: classic alien shape via lathe (wide cranium tapering to a pointed chin) ----
+  const prof=[[0.02,-0.62],[0.13,-0.5],[0.24,-0.35],[0.34,-0.2],[0.43,-0.04],[0.49,0.13],[0.485,0.27],[0.46,0.41],[0.40,0.53],[0.31,0.63],[0.19,0.71],[0.02,0.77]].map(p=>new THREE.Vector2(p[0],p[1]));
+  const head=new THREE.Mesh(new THREE.LatheGeometry(prof,32),skin); head.position.set(0,1.55,0); head.scale.setScalar(1.06); fullAlien.add(head);
+  // rounder, friendlier eyes with a gap between them + small catch-lights — on +z (faces the viewer)
+  [-1,1].forEach(sx=>{ const e=new THREE.Mesh(new THREE.SphereGeometry(0.18,18,18),eyeMat); e.scale.set(0.95,1.05,0.55); e.position.set(0.2*sx,1.64,0.5); e.rotation.set(0.05,0,-0.18*sx); fullAlien.add(e);
+    const hi=new THREE.Mesh(new THREE.SphereGeometry(0.035,8,8),new THREE.MeshBasicMaterial({color:0xffffff})); hi.position.set(0.17*sx,1.68,0.6); fullAlien.add(hi); });
+  // small, thin, friendly smile set a little lower
+  const smile=new THREE.Mesh(new THREE.TorusGeometry(0.1,0.02,8,20,Math.PI),new THREE.MeshBasicMaterial({color:0x0a0a12})); smile.position.set(0,1.33,0.4); smile.rotation.z=Math.PI; fullAlien.add(smile);
+  // ---- body ----
+  const M=(geo,x,y,z)=>{ const m=new THREE.Mesh(geo,skin); m.position.set(x,y,z); fullAlien.add(m); return m; };
+  M(new THREE.CylinderGeometry(0.13,0.18,0.22,10),0,0.86,0);           // neck
+  M(new THREE.CylinderGeometry(0.3,0.4,0.85,14),0,0.42,0);             // torso
+  const hips=M(new THREE.SphereGeometry(0.36,14,12),0,0.02,0); hips.scale.set(1,0.7,0.85);
+  [-1,1].forEach(sx=>{ M(new THREE.CylinderGeometry(0.11,0.09,0.52,8),0.16*sx,-0.3,0);      // thigh
+    M(new THREE.CylinderGeometry(0.09,0.075,0.52,8),0.16*sx,-0.78,0);                        // shin
+    const f=M(new THREE.SphereGeometry(0.13,10,10),0.16*sx,-1.05,0.09); f.scale.set(1,0.55,1.6); }); // foot
+  // ---- arms (both complete: one raised & waving, one relaxed) ----
+  function arm(sx,raised){
+    const px=0.3*sx, py=0.72, d=raised?1:-1;
+    // fixed shoulder/deltoid — bridges to the torso and stays put as the arm moves
+    const delt=new THREE.Mesh(new THREE.SphereGeometry(0.15,12,12),skin); delt.position.set(px,py,0); delt.scale.set(1.05,0.95,1.05); fullAlien.add(delt);
+    const sh=new THREE.Group(); sh.position.set(px,py,0); fullAlien.add(sh);
+    const u=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.062,0.62,8),skin); u.position.y=0.31*d; sh.add(u);
+    const elbow=new THREE.Group(); elbow.position.y=0.62*d; sh.add(elbow);
+    const f=new THREE.Mesh(new THREE.CylinderGeometry(0.062,0.05,0.55,8),skin); f.position.y=0.28*d; elbow.add(f);
+    // a clear slender palm + three moderate tapering fingers
+    const palm=new THREE.Mesh(new THREE.SphereGeometry(0.11,12,12),skin); palm.scale.set(0.85,1.0,0.42); palm.position.y=0.56*d; elbow.add(palm);
+    [-1,0,1].forEach(k=>{ const fg=new THREE.Mesh(new THREE.CylinderGeometry(d>0?0.012:0.026, d>0?0.026:0.012, 0.18, 6),skin); fg.position.set(k*0.045,0.77*d,0); fg.rotation.z=-k*0.22*d; elbow.add(fg); });
+    return {sh,elbow};
+  }
+  const armR=arm(1,true); armR.sh.rotation.z=-1.2; alienWave=armR.elbow;   // raised, waving
+  const armL=arm(-1,false); armL.sh.rotation.z=-0.3;                        // relaxed at side
+  uScene.add(fullAlien);
+})();
+
+/* projection beam — the craft "casts" the message toward the screen */
+let beam, beamCore;
+(function(){
+  /* fade each cone from bright at the craft (apex) to transparent at the far end, so the
+     beam reads as light dissipating downward — not a hard circular base. */
+  function fade(geo,tint){ const p=geo.attributes.position,c=new Float32Array(p.count*3),col=new THREE.Color(tint);
+    for(let i=0;i<p.count;i++){ let f=clamp(1+p.getY(i)/30,0,1); f=f*f; c[i*3]=col.r*f;c[i*3+1]=col.g*f;c[i*3+2]=col.b*f; }
+    geo.setAttribute('color',new THREE.BufferAttribute(c,3)); }
+  const g1=new THREE.ConeGeometry(15,30,40,10,true); g1.translate(0,-15,0); fade(g1,0x8fdcff); // wide soft fan
+  beam=new THREE.Mesh(g1,new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,fog:false}));
+  const g2=new THREE.ConeGeometry(4.5,30,28,10,true); g2.translate(0,-15,0); fade(g2,0xdffbff); // bright central beam
+  beamCore=new THREE.Mesh(g2,new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,fog:false}));
+  uScene.add(beam); uScene.add(beamCore);
+})();
+
+/* ======================= WARP / SPEED STREAKS ======================= */
+/* One line-streak field: faint when scrolling fast anywhere, a full burst in
+   the designated hyperspace band. Streak heads rush toward the camera. */
+const streakN=300; const wg=new THREE.BufferGeometry(); const wpos=new Float32Array(streakN*6); const wBase=[];
+for(let i=0;i<streakN;i++){ const a=Math.random()*7,r=1.5+Math.random()*24; wBase.push({x:Math.cos(a)*r,y:Math.sin(a)*r*0.7,z:Math.random()*170}); }
+wg.setAttribute('position',new THREE.BufferAttribute(wpos,3));
+const warpMat=new THREE.LineBasicMaterial({color:0xbfeaff,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,fog:false});
+const warpLines=new THREE.LineSegments(wg,warpMat); warpLines.frustumCulled=false; scene.add(warpLines);
+
+/* warp burst only in the long gap between sector 1 and 2 */
+function warpAt(p){ const lo=0.185, hi=0.255; if(p<lo||p>hi) return 0; return Math.sin((p-lo)/(hi-lo)*Math.PI); }
+
+/* ======================= COLOR PER REGION ======================= */
+const ACT_COL=ACTS.map(a=>new THREE.Color(a.color));
+const tmpCol=new THREE.Color(), darkCol=new THREE.Color(), fogTmp=new THREE.Color(), FOGBASE=new THREE.Color(0x05070f);
+function regionColor(p,out){ const f=clamp(p,0,1)*(N-1),i0=Math.floor(f),i1=Math.min(i0+1,N-1); out.copy(ACT_COL[i0]).lerp(ACT_COL[i1],smooth(f-i0)); return out; }
+
+/* ======================= SCROLL RIG ======================= */
+function scrollMax(){ return Math.max(1, document.documentElement.scrollHeight - innerHeight); }
+let targetP=0, P=0, prevP=0;
+function readScroll(){ targetP=clamp(scrollY/scrollMax(),0,1); }
+addEventListener('scroll',readScroll,{passive:true});
+function scrollToP(p){ scrollTo({top:p*scrollMax(),behavior:R?'auto':'smooth'}); }
+
+/* keyboard */
+addEventListener('keydown',e=>{
+  const tg=(e.target&&e.target.tagName)||''; if(tg==='INPUT'||tg==='TEXTAREA'||e.target.isContentEditable) return;
+  if(['ArrowDown','PageDown',' '].includes(e.key)){ e.preventDefault(); scrollBy({top:innerHeight*0.85,behavior:'smooth'}); }
+  else if(['ArrowUp','PageUp'].includes(e.key)){ e.preventDefault(); scrollBy({top:-innerHeight*0.85,behavior:'smooth'}); }
+  else if(e.key==='Home'){ scrollToP(0); } else if(e.key==='End'){ scrollToP(1); }
+});
+
+/* resize */
+function onResize(){ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); uRenderer.setSize(innerWidth,innerHeight); }
+addEventListener('resize',()=>{ onResize(); readScroll(); });
+
+/* ======================= HUD / SECTIONS UPDATE ======================= */
+const hint=document.getElementById('hint');
+const tintEl=document.getElementById('tint');
+let curSector=-1, moveFired=false, arrived=false;
+
+function updateSections(){
+  let best=0,bi=0;
+  for(let i=0;i<N;i++){
+    const c=i/(N-1); const d=Math.abs(P-c);
+    // solid when parked at a stop; fades out well before the midpoint so only one shows
+    let s;
+    if(d<seg*0.18) s=1;
+    else s=1-smooth(clamp((d-seg*0.18)/(seg*0.34),0,1));
+    const el=sectEls[i];
+    el.style.opacity=s;
+    let sh=s>0.82;
+    if(i===0 && introActive && introT<0.6) sh=false; // wait for the craft to arrive
+    el.classList.toggle('show', sh);
+    const dir=P<c?1:-1; el.style.transform='translateY('+((1-s)*16*dir).toFixed(1)+'px)';
+    el.querySelector('.wrap').style.pointerEvents = s>0.6 ? 'auto':'none';
+    if(s>best){best=s;bi=i;}
+  }
+  if(bi!==curSector){ curSector=bi;
+    rmEls.forEach((r,i)=>r.classList.toggle('active',i===bi));
+    navEls.forEach((n,i)=>n.classList.toggle('on',i===bi));
+  }
+  railFill.style.height=(P*100)+'%';
+  if(hint) hint.style.opacity = P>0.02 ? '0':'0.8';
+}
+
+/* flash */
+const flashEl=document.getElementById('flash');
+function flash(col){ if(!flashEl)return; flashEl.style.background='radial-gradient(circle at 50% 46%,'+col+',transparent 62%)'; flashEl.style.opacity='0.5'; requestAnimationFrame(()=>requestAnimationFrame(()=>{flashEl.style.opacity='0';})); }
+
+/* ======================= SOUND TOGGLE ======================= */
+let soundOn=false;
+const soundBtn=document.getElementById('sound');
+if(soundBtn){ const lbl=soundBtn.querySelector('.lbl');
+  soundBtn.addEventListener('click',()=>{ soundOn=Audio.setEnabled(!soundOn); soundBtn.classList.toggle('on',soundOn); soundBtn.classList.remove('pulse'); if(lbl)lbl.textContent=soundOn?'SOUND ON':'SOUND OFF'; if(soundOn)Audio.blip(680,.12,'sine',.13); }); }
+document.querySelectorAll('.links a').forEach(a=>a.addEventListener('mouseenter',()=>Audio.blip(1250,.05,'sine',.05)));
+
+/* ---- contact form → EmailJS ---- */
+(function(){
+  const btn = document.getElementById('cf-send');
+  if (!btn) return;
+
+  const nm = document.getElementById('cf-name');
+  const em = document.getElementById('cf-email');
+  const mg = document.getElementById('cf-msg');
+  const st = document.getElementById('cf-status');
+
+  const set = (m, c) => {
+    st.textContent = m;
+    st.className = 'cf-status' + (c ? ' ' + c : '');
+  };
+
+  btn.addEventListener('click', async () => {
+    const name = (nm.value || '').trim();
+    const email = (em.value || '').trim();
+    const msg = (mg.value || '').trim();
+
+    if (!name || !email || !msg) {
+      set('FILL IN ALL FIELDS', 'err');
+      return;
+    }
+
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      set('CHECK YOUR EMAIL', 'err');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '▸ TRANSMITTING…';
+    set('', '');
+
+    if (soundOn) Audio.blip(880, .1, 'sine', .1);
+
+    try {
+      const response = await fetch(
+        'http://localhost:3000/api/contact',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: name,
+            email: email,
+            message: msg
+          })
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Transmission failed');
+      }
+
+      set('✓ MESSAGE SENT — TALK SOON', 'ok');
+      btn.textContent = '▸ SENT';
+
+      nm.value = '';
+      em.value = '';
+      mg.value = '';
+
+      if (soundOn) Audio.arrive();
+
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = '▸ TRANSMIT';
+      }, 4500);
+
+    } catch (error) {
+      console.error('Contact form error:', error);
+
+      set('TRANSMISSION FAILED — TRY AGAIN', 'err');
+
+      btn.disabled = false;
+      btn.textContent = '▸ TRANSMIT';
+    }
+  });
+})();
+
+/* ======================= MAIN LOOP ======================= */
+const camPos=V(0,0,0), lookPos=V(0,0,0), lookDir=V(0,0,0);
+const craftPos=V(0,0,0), craftTan=V(0,0,0), tmpTan=V(0,0,0);
+const DOWN=V(0,-1,0), beamDir=V(0,0,0), WORLDUP=V(0,1,0), _r=V(0,0,0), _u=V(0,0,0), _tmp=V(0,0,0), _alien=V(0,0,0);
+let craftBank=0, last=performance.now();
+
+/* shooting-star update: spawn across the current view, streak, fade, respawn.
+   Uses the view basis (_r,_u,lookDir) computed in the frame loop. */
+function updateMeteors(dt){
+  const arr=mg.attributes.position.array, col=mg.attributes.color.array;
+  for(let i=0;i<METN;i++){ const m=met[i];
+    if(!m.active){ m.delay-=dt; if(m.delay<=0){
+        m.active=true; m.max=0.7+Math.random()*0.8; m.life=m.max;
+        const D=90+Math.random()*170, rx=(Math.random()*2-1)*95, ry=(Math.random()*2-1)*58;
+        m.pos.copy(camPos).addScaledVector(lookDir,D).addScaledVector(_r,rx).addScaledVector(_u,ry);
+        const ang=Math.random()*Math.PI*2, sp=75+Math.random()*95;
+        m.vel.copy(_r).multiplyScalar(Math.cos(ang)*sp).addScaledVector(_u,Math.sin(ang)*sp).addScaledVector(lookDir,Math.random()*22-6);
+    } }
+    let hx=0,hy=0,hz=0,tx=0,ty=0,tz=0,f=0;
+    if(m.active){ m.pos.addScaledVector(m.vel,dt); m.life-=dt; if(m.life<=0){ m.active=false; m.delay=1.6+Math.random()*5; }
+      f=clamp(m.life/m.max,0,1)*clamp((m.max-m.life)/0.15,0,1);
+      _tmp.copy(m.vel).multiplyScalar(-0.06);
+      hx=m.pos.x;hy=m.pos.y;hz=m.pos.z; tx=hx+_tmp.x;ty=hy+_tmp.y;tz=hz+_tmp.z;
+    }
+    arr[i*6]=hx;arr[i*6+1]=hy;arr[i*6+2]=hz; arr[i*6+3]=tx;arr[i*6+4]=ty;arr[i*6+5]=tz;
+    col[i*6]=f;col[i*6+1]=f;col[i*6+2]=f; col[i*6+3]=0;col[i*6+4]=0;col[i*6+5]=0;
+  }
+  mg.attributes.position.needsUpdate=true; mg.attributes.color.needsUpdate=true;
+}
+
+/* opening cinematic: craft flies in, then the name flashes */
+let introActive=!R, introMsgShown=R, introStartTime=0, introT=1; const INTRO_DUR=2.3;
+let emergeT=0; // captain emerges only after the UFO has arrived
+
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt=Math.min((now-last)/1000,0.05); last=now; const t=now*0.001;
+
+  prevP=P;
+  if(R){ P=targetP; }
+  else { P=lerp(P,targetP,0.055); if(Math.abs(targetP-P)<0.0004) P=targetP; }
+
+  /* opening cinematic timing */
+  introT=1;
+  if(introActive){
+    if(P>0.02){ introActive=false; }
+    else if(introStartTime===0){ introT=0; }
+    else { introT=clamp((now-introStartTime)/(INTRO_DUR*1000),0,1); if(introT>=1) introActive=false; }
+  }
+  if(introActive && !introMsgShown && introT>0.6){ introMsgShown=true; flash('rgba(126,231,255,.55)'); if(soundOn)Audio.arrive(); }
+
+  if(!arrived && P>0.985){ arrived=true; flash('rgba(147,209,154,.5)'); if(soundOn)Audio.arrive(); }
+  if(P<0.9) arrived=false;
+
+  /* streaks fire on EVERY leg, driven purely by travel: 'transit' ramps up as you leave a
+     sector and eases to ZERO at rest, plus a speed term — so all motion stops when parked. */
+  const spd=Math.abs(P-prevP);
+  const _fr=clamp(P,0,1)*(N-1), _dd=Math.abs(_fr-Math.round(_fr));
+  const transit=smooth(clamp(_dd/0.28,0,1));
+  const streakI=clamp(Math.max(transit, spd*100-0.03),0,1);
+  // travel whoosh — once per transition
+  if(!moveFired && streakI>0.4){ moveFired=true; if(soundOn)Audio.warp(1.0); }
+  if(streakI<0.12) moveFired=false;
+
+  /* camera & look, sampled by segment param so rests land on keyframes */
+  camCurve.getPoint(clamp(P,0,1),camPos);
+  lookCurve.getPoint(clamp(P,0,1),lookPos);
+  camera.position.copy(camPos);
+  camera.fov=lerp(camera.fov,60+streakI*16,0.12); camera.updateProjectionMatrix();
+  // banking sway + a little high-frequency shake — turbulence on EVERY leg, not just the warp band
+  const roll=streakI*(Math.sin(now*0.0062)*0.28 + Math.sin(now*0.017+0.7)*0.11 + Math.sin(now*0.043)*0.045);
+  camera.up.set(Math.sin(roll),Math.cos(roll),0);
+  camera.lookAt(lookPos);
+  fill.position.copy(camPos);
+  uFill.position.copy(camPos);
+
+  lookDir.copy(lookPos).sub(camPos); if(lookDir.lengthSq()<1e-6) lookDir.set(0,0,-1); lookDir.normalize();
+  _r.copy(lookDir).cross(WORLDUP); if(_r.lengthSq()<1e-6)_r.set(1,0,0); _r.normalize();
+  _u.copy(_r).cross(lookDir).normalize();
+
+  /* chase craft — flies the route just ahead of the camera, banking into turns (as before) */
+  camCurve.getPoint(clamp(P+0.02,0,1),craftPos);
+  camCurve.getTangent(clamp(P+0.02,0,1),craftTan);
+  const leadD=craftPos.distanceTo(camPos);
+  if(leadD<9) craftPos.addScaledVector(craftTan,9-leadD); // stay comfortably ahead, incl. the final stop
+  /* at the opening, lift the craft ABOVE the message so it reads as a projector casting down */
+  const titleF=smooth(clamp(1-P/0.05,0,1));
+  const endF=smooth(clamp((P-0.93)/0.07,0,1));
+  if(titleF>0.001){ _tmp.copy(camPos).addScaledVector(lookDir,18); _tmp.y+=6; craftPos.lerp(_tmp,titleF); }
+  if(endF>0.001){ _tmp.copy(camPos).addScaledVector(lookDir,22); _tmp.y+=8.5; craftPos.lerp(_tmp,endF); }
+  if(introActive){ // sweep in from far, upper-right, deep ahead
+    const e=1-Math.pow(1-introT,3);
+    const bx=craftPos.x,by=craftPos.y,bz=craftPos.z, ax=bx+46,ay=by+32,az=bz-84;
+    craftPos.set(ax+(bx-ax)*e, ay+(by-ay)*e, az+(bz-az)*e);
+  } else if(titleF<0.5 && endF<0.5){
+    /* keep the craft in frame and leaning a little right — it keeps its natural (varied) spot
+       and size, but is never allowed off the left edge (see sectors 2/4/5/6) */
+    _tmp.copy(craftPos).sub(camPos);
+    const d=Math.max(_tmp.dot(lookDir),4), th=Math.tan(camera.fov*Math.PI/360), hw=d*th*camera.aspect, hh=d*th;
+    const rx=clamp(_tmp.dot(_r),0.1*hw,0.7*hw), ry=clamp(_tmp.dot(_u),-0.4*hh,0.66*hh);
+    craftPos.copy(camPos).addScaledVector(lookDir,d).addScaledVector(_r,rx).addScaledVector(_u,ry);
+  }
+  craft.position.copy(craftPos);
+  const heading=Math.atan2(craftTan.x,craftTan.z);
+  camCurve.getTangent(clamp(P+0.04,0,1),tmpTan);
+  const turn=tmpTan.x*craftTan.z - tmpTan.z*craftTan.x;
+  craftBank=lerp(craftBank,clamp(-turn*4,-0.6,0.6),0.1);
+  craft.rotation.set(0,heading+Math.PI,0);
+  craft.rotateZ(craftBank);
+  craft.rotateX(Math.sin(t*0.8)*0.05);
+  if(introActive) craft.rotateZ(Math.sin(introT*Math.PI)*0.6*(1-introT));
+  craftLights.rotation.y=t*1.2;
+  if(craftAlien) craftAlien.lookAt(camPos); // the pilot keeps an eye on you
+
+  /* the captain steps out of the UFO and waves — only AFTER the ship has arrived & settled */
+  if(P>0.992) emergeT=Math.min(emergeT+dt/1.3,1); else emergeT=Math.max(emergeT-dt/0.5,0);
+  if(fullAlien){
+    const emerge=smooth(emergeT);
+    fullAlien.visible=emerge>0.002;
+    if(fullAlien.visible){
+      fullAlien.scale.setScalar(emerge*1.4);
+      _alien.copy(camPos).addScaledVector(lookDir,16); _alien.y+=5;
+      fullAlien.position.copy(craftPos).lerp(_alien,emerge);
+      fullAlien.position.y += Math.sin(now*0.002)*0.12; // gentle float
+      fullAlien.lookAt(camPos);
+      if(alienWave) alienWave.rotation.z=Math.sin(now*0.009)*0.55; // wave!
+    }
+    if(craftAlien) craftAlien.visible = emerge<0.4; // the dome empties once the captain is out
+  }
+  // bigger at the title; and grow as it approaches during the fly-in
+  let cs=1+0.4*titleF;
+  if(introActive) cs*=(0.35+0.65*(1-Math.pow(1-introT,3)));
+  craft.scale.setScalar(cs);
+
+  /* projection beam — on at the title, arriving with the intro message */
+  let beamF=smooth(clamp(1-P/0.05,0,1));
+  if(introActive) beamF*=smooth(clamp((introT-0.5)/0.32,0,1));
+  beam.position.copy(craftPos); beamCore.position.copy(craftPos);
+  beamDir.copy(lookPos).sub(craftPos); if(beamDir.lengthSq()<1e-6) beamDir.set(0,-1,0); beamDir.normalize();
+  beam.quaternion.setFromUnitVectors(DOWN,beamDir); beamCore.quaternion.copy(beam.quaternion);
+  beam.material.opacity=beamF*0.18; beamCore.material.opacity=beamF*0.32;
+
+  /* shooting stars + subtle twinkle */
+  updateMeteors(dt);
+  starsB.material.opacity=0.78+Math.sin(t*1.4)*0.15;
+
+  /* set pieces */
+  for(let i=0;i<pieces.length;i++) pieces[i].update(t,dt);
+
+  /* colour emerges only as you APPROACH a sector — the space between is dark.
+     Uses the nearest sector's colour scaled by proximity, so mid-flight is neutral/dark. */
+  const nsec=Math.round(clamp(P,0,1)*(N-1)), ddc=Math.abs(clamp(P,0,1)*(N-1)-nsec);
+  const prox=smooth(clamp(1-ddc/0.3,0,1)); // 1 at a sector, →0 (dark) through the middle of each leg
+  tmpCol.copy(ACT_COL[nsec]);
+  moodMat.color.lerp(tmpCol,0.06);
+  moodMat.opacity=0.03+0.32*prox; // glow nearly off in the dark between sectors
+  moodNeb.position.set(camPos.x+lookDir.x*150,camPos.y+lookDir.y*150+6,camPos.z+lookDir.z*150);
+  fogTmp.copy(tmpCol).multiplyScalar(0.12); darkCol.copy(FOGBASE).lerp(fogTmp,prox);
+  sceneFog.color.lerp(darkCol,0.06);
+  if(tintEl){ const gate=smooth(clamp((P-0.03)/0.10,0,1)); const ta=0.30*prox*gate;
+    tintEl.style.setProperty('--tint','rgba('+(tmpCol.r*255|0)+','+(tmpCol.g*255|0)+','+(tmpCol.b*255|0)+','+ta.toFixed(3)+')'); }
+
+  /* velocity- & warp-reactive streaks (heads rush toward camera) — on every transition */
+  warpMat.opacity=streakI*0.95;
+  const headSpeed=120+streakI*280, stretch=2+streakI*34;
+  const wa=wg.attributes.position.array;
+  for(let i=0;i<streakN;i++){ const b=wBase[i];
+    b.z-=headSpeed*dt; if(b.z<-30){ b.z=170+Math.random()*40; const a=Math.random()*7,r=1.5+Math.random()*24; b.x=Math.cos(a)*r; b.y=Math.sin(a)*r*0.7; }
+    const hx=camPos.x+_r.x*b.x+_u.x*b.y+lookDir.x*b.z, hy=camPos.y+_r.y*b.x+_u.y*b.y+lookDir.y*b.z, hz=camPos.z+_r.z*b.x+_u.z*b.y+lookDir.z*b.z;
+    wa[i*6]=hx; wa[i*6+1]=hy; wa[i*6+2]=hz;
+    wa[i*6+3]=hx+lookDir.x*stretch; wa[i*6+4]=hy+lookDir.y*stretch; wa[i*6+5]=hz+lookDir.z*stretch;
+  }
+  wg.attributes.position.needsUpdate=true;
+
+  updateSections();
+  renderer.render(scene,camera);
+  uRenderer.render(uScene,camera);
+}
+
+/* ======================= BOOT ======================= */
+readScroll();
+requestAnimationFrame(frame);
+let booted=false;
+function boot(){ if(booted)return; booted=true; document.getElementById('loader').classList.add('done'); introStartTime=performance.now(); }
+addEventListener('load',()=>setTimeout(boot,R?300:1800));
+setTimeout(boot,3600);
+
+</script>
+</body>
+</html>
